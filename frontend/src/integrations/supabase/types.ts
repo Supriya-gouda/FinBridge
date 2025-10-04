@@ -14,7 +14,30 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      crowd_wisdom: {
+        Row: {
+          id: number
+          user_id: string
+          metric: string
+          value: number
+          created_at: string
+        }
+        Insert: {
+          id?: number
+          user_id: string
+          metric: string
+          value: number
+          created_at?: string
+        }
+        Update: {
+          id?: number
+          user_id?: string
+          metric?: string
+          value?: number
+          created_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

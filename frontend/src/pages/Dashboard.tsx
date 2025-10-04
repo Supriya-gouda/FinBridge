@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { LogOut, TrendingUp, Target, Award, BookOpen, Brain, Bell } from "lucide-react";
+import { LogOut, TrendingUp, Target, Award, BookOpen, Brain, Bell, Users } from "lucide-react";
 import { toast } from "sonner";
 import type { User } from "@supabase/supabase-js";
 
@@ -300,6 +300,22 @@ const Dashboard = () => {
                 onClick={() => navigate("/goal-planner")}
               >
                 Plan Goals
+              </Button>
+            </div>
+          </Card>
+
+          <Card className="p-6 gradient-primary relative overflow-hidden shadow-primary card-hover">
+            <div className="absolute inset-0 bg-dots-pattern opacity-10" />
+            <div className="relative z-10">
+              <Users className="w-8 h-8 text-white mb-3 drop-shadow-lg" />
+              <h3 className="text-lg font-bold text-white mb-2">Crowd Wisdom</h3>
+              <p className="text-white/90 text-sm mb-4">Compare your financial habits with the community anonymously</p>
+              <Button 
+                variant="secondary" 
+                className="w-full bg-white/20 hover:bg-white/30 text-white border-white/30 backdrop-blur-sm"
+                onClick={() => navigate("/crowd-wisdom")}
+              >
+                Compare Now
               </Button>
             </div>
           </Card>

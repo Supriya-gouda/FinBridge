@@ -13,6 +13,7 @@ import FinancialSimulator from "./pages/FinancialSimulator";
 import SmartAlerts from "./pages/SmartAlerts";
 import SmartInvestmentAdvisor from "./pages/SmartInvestmentAdvisor";
 import GoalPlanner from "./pages/GoalPlanner";
+import CrowdWisdom from "./pages/CrowdWisdom";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -42,7 +43,8 @@ const App = () => (
               <Route path="/smart-alerts" element={<SmartAlerts />} />
               <Route path="/investment-advisor" element={<SmartInvestmentAdvisor />} />
               <Route path="/goal-planner" element={<GoalPlanner />} />
-              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+              <Route path="/crowd-wisdom" element={<CrowdWisdom />} />
+              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
           </div>

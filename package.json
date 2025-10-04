@@ -1,0 +1,41 @@
+{
+  "name": "FinBridge - Full Stack Application",
+  "description": "Financial education platform with crowd wisdom tracking",
+  "version": "1.0.0",
+  "scripts": {
+    "install-all": "cd backend && npm install && cd ../frontend && npm install",
+    "dev": "concurrently \"npm run backend\" \"npm run frontend\"",
+    "backend": "cd backend && npm start",
+    "frontend": "cd frontend && npm run dev",
+    "start": "npm run dev"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "instructions": {
+    "manual_setup": [
+      "1. Open Terminal 1: cd backend && npm install && npm start",
+      "2. Open Terminal 2: cd frontend && npm install && npm run dev", 
+      "3. Navigate to: http://localhost:8080"
+    ],
+    "features": {
+      "crowd_wisdom": {
+        "url": "/crowd-wisdom",
+        "api_endpoints": [
+          "POST /api/crowd/metrics - Save user metrics",
+          "GET /api/crowd/compare/:userId/:metric - Get comparison data"
+        ],
+        "metrics": [
+          "savings_rate - Savings Rate (%)",
+          "debt_ratio - Debt-to-Income Ratio (%)", 
+          "emergency_fund_months - Emergency Fund (Months)",
+          "investment_percentage - Investment Allocation (%)"
+        ]
+      }
+    },
+    "ports": {
+      "backend": 4000,
+      "frontend": 8080
+    }
+  }
+}
