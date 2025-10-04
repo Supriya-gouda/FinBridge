@@ -1,161 +1,356 @@
-# FinBridge - Financial Education Platform# Welcome to your Lovable project
+# 🌉 FinBridge - Financial Education Platform# 🌉 FinBridge - Financial Education Platform
 
 
 
-A comprehensive financial education platform with separate frontend and backend services.## Project info
+A comprehensive financial education platform that bridges the gap between financial literacy and practical money management. Built with modern web technologies to provide users with personalized financial insights, smart alerts, and educational content.A comprehensive financial education platform that bridges the gap between financial literacy and practical money management. Built with modern web technologies to provide users with personalized financial insights, smart alerts, and educational content.
 
 
 
-## Repository Structure**URL**: https://lovable.dev/projects/3d2b8dba-6070-4d9b-83fd-5eb51a82ca69
+## 🚀 Quick Start## 🚀 Quick Start
 
 
 
-- `frontend/` — React/Vite frontend application with all UI components, pages, and configurations## How can I edit this code?
+### Prerequisites### Prerequisites
 
-- `backend/` — Express.js backend API server (minimal scaffold ready for development)
+- Node.js (v18 or higher)- Node.js (v18 or higher)
 
-There are several ways of editing your application.
+- npm or yarn- npm or yarn
 
-## Development Setup
-
-**Use Lovable**
-
-### Frontend Development
-
-```powershellSimply visit the [Lovable Project](https://lovable.dev/projects/3d2b8dba-6070-4d9b-83fd-5eb51a82ca69) and start prompting.
-
-cd frontend
-
-npm installChanges made via Lovable will be committed automatically to this repo.
-
-npm run dev
-
-```**Use your preferred IDE**
-
-The frontend will start on `http://localhost:5173` (or the next available port).
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-### Backend Development
-
-```powershellThe only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-cd backend
-
-npm installFollow these steps:
-
-npm run dev    # Uses nodemon for auto-reload
-
-# or: npm start  # Direct node execution```sh
-
-```# Step 1: Clone the repository using the project's Git URL.
-
-The backend will start on `http://localhost:4000`.git clone <YOUR_GIT_URL>
+- Git- Git
 
 
 
-### Health Check# Step 2: Navigate to the project directory.
-
-Test the backend API:cd <YOUR_PROJECT_NAME>
-
-```powershell
-
-# PowerShell# Step 3: Install the necessary dependencies for the frontend (move files first - see below)
-
-Invoke-WebRequest http://localhost:4000/api/health | Select-Object -ExpandProperty Contentcd frontend; npm i
+### Installation & Setup### Installation & Setup
 
 
 
-# Or with curl (if available)# Step 4: Start the development server from the frontend folder with auto-reloading and an instant preview.
+1. **Clone the repository**1. **Clone the repository**
 
-curl http://localhost:4000/api/healthcd frontend; npm run dev
+```bash```bash
+
+git clone https://github.com/Supriya-gouda/FinBridge.gitgit clone https://github.com/Supriya-gouda/FinBridge.git
+
+cd FinBridgecd FinBridge
 
 ``````
 
 
 
-## Technologies Used**Edit a file directly in GitHub**
+2. **Install root dependencies**2. **Install root dependencies**
+
+```bash```bash
+
+npm installnpm install
+
+``````
 
 
+
+3. **Start both services simultaneously**3. **Start both services simultaneously**
+
+```bash```bash
+
+npm run devnpm run dev
+
+``````
+
+
+
+Or start them individually:Or start them individually:
+
+
+
+4. **Backend Setup**4. **Backend Setup**
+
+```bash```bash
+
+cd backendcd backend
+
+npm installnpm install
+
+npm startnpm start
+
+``````
+
+The backend will start on `http://localhost:4000`The backend will start on `http://localhost:4000`
+
+
+
+5. **Frontend Setup** (in a new terminal)5. **Frontend Setup** (in a new terminal)
+
+```bash```bash
+
+cd frontendcd frontend
+
+npm installnpm install
+
+npm run devnpm run dev
+
+``````
+
+The frontend will start on `http://localhost:8080`The frontend will start on `http://localhost:8080`
+
+
+
+### Environment Configuration### Environment Configuration
+
+
+
+The backend requires a `.env` file with Supabase credentials (already configured):The backend requires a `.env` file with Supabase credentials (already configured):
+
+```env```env
+
+SUPABASE_URL=your_supabase_urlSUPABASE_URL=your_supabase_url
+
+SUPABASE_ANON_KEY=your_supabase_anon_keySUPABASE_ANON_KEY=your_supabase_anon_key
+
+PORT=4000PORT=4000
+
+``````
+
+
+
+## 🎯 Features
+
+
+
+### 📊 Financial Health Scoring## Technologies Used**Edit a file directly in GitHub**
+
+- Comprehensive financial health assessment
+
+- Real-time score calculation based on multiple factors
+
+- Detailed breakdown and personalized recommendations
 
 ### Frontend- Navigate to the desired file(s).
 
-- Vite- Click the "Edit" button (pencil icon) at the top right of the file view.
+### 🔔 Smart Alerts
 
-- TypeScript- Make your changes and commit the changes.
+- Bill reminders and payment notifications- Vite- Click the "Edit" button (pencil icon) at the top right of the file view.
+
+- Investment opportunity alerts
+
+- Goal progress tracking- TypeScript- Make your changes and commit the changes.
+
+- Emergency fund warnings
 
 - React
 
-- shadcn-ui**Use GitHub Codespaces**
+### 🧠 Personality Profiler
 
-- Tailwind CSS
+- Financial personality assessment- shadcn-ui**Use GitHub Codespaces**
+
+- Personalized investment strategies  
+
+- Behavioral insights and challenges- Tailwind CSS
+
+- Custom financial coaching
 
 - Supabase integration- Navigate to the main page of your repository.
 
-- Click on the "Code" button (green button) near the top right.
+### 📈 Investment Tools
 
-### Backend- Select the "Codespaces" tab.
+- Smart investment advisor- Click on the "Code" button (green button) near the top right.
+
+- Portfolio recommendations
+
+- Risk assessment### Backend- Select the "Codespaces" tab.
+
+- Market insights integration
 
 - Express.js- Click on "New codespace" to launch a new Codespace environment.
 
-- Node.js- Edit files directly within the Codespace and commit and push your changes once you're done.
+### 🎯 Goal Planning
+
+- Short and long-term financial goal setting- Node.js- Edit files directly within the Codespace and commit and push your changes once you're done.
+
+- Progress tracking and milestones
+
+- Achievement rewards and gamification
 
 
 
-## Project Features## What technologies are used for this project?
+### 📚 Educational Content## Project Features## What technologies are used for this project?
+
+- Micro-learning modules
+
+- Financial literacy content
+
+- Mistake Mirror (learn from common errors)
+
+- Interactive financial simulationsFinBridge includes several key financial education modules:This project is built with:
 
 
 
-FinBridge includes several key financial education modules:This project is built with:
+### 👥 Community Features- Financial Simulator
 
-- Financial Simulator
+- Crowd wisdom insights
 
-- Goal Planner- Vite
+- Peer comparisons (anonymous)- Goal Planner- Vite
 
-- Smart Investment Advisor- TypeScript
+- Community challenges
 
-- Personality Profiler- React
+- Financial success stories- Smart Investment Advisor- TypeScript
 
-- Micro Learning- shadcn-ui
 
-- Smart Alerts- Tailwind CSS
 
-- Mistake Mirror (learning from financial mistakes)
+## 🏗️ Architecture- Personality Profiler- React
 
-Repository layout (new)
+
+
+### Frontend (`/frontend`)- Micro Learning- shadcn-ui
+
+- **React 18** with TypeScript
+
+- **Vite** for fast development and building- Smart Alerts- Tailwind CSS
+
+- **Tailwind CSS** for styling
+
+- **shadcn/ui** component library- Mistake Mirror (learning from financial mistakes)
+
+- **React Router** for navigation
+
+- **React Query** for data fetchingRepository layout (new)
+
+- **Supabase** for authentication and data
 
 ## Next Steps
 
-- `frontend/` — the React/Vite frontend app. Move the existing frontend files from the repository root into this folder.
+### Backend (`/backend`)
 
-1. **Configure CORS**: Add CORS middleware to the backend to allow frontend API calls- `backend/` — Express-based backend scaffold (minimal).
+- **Express.js** REST API- `frontend/` — the React/Vite frontend app. Move the existing frontend files from the repository root into this folder.
 
-2. **Environment Variables**: Set up proper environment configuration for both frontend and backend
+- **Node.js** runtime
 
-3. **Database Integration**: Connect your preferred database to the backendMoving existing frontend files into `frontend/` (PowerShell)
+- **Supabase** database integration1. **Configure CORS**: Add CORS middleware to the backend to allow frontend API calls- `backend/` — Express-based backend scaffold (minimal).
 
-4. **API Routes**: Implement actual API endpoints for the financial education features
+- **CORS** enabled for frontend communication
 
-5. **Authentication**: Integrate authentication service (Supabase Auth is already set up in frontend)Open PowerShell at the repository root and run the command below to move everything except the new `frontend` and `backend` folders themselves into `frontend/`:
+- Modular route structure2. **Environment Variables**: Set up proper environment configuration for both frontend and backend
 
-```powershell
-Get-ChildItem -Force | Where-Object { $_.Name -ne 'backend' -and $_.Name -ne 'frontend' } | Move-Item -Destination frontend -Force
-```
 
-After moving, switch to the `frontend/` folder to install and run the dev server:
 
-```powershell
-cd frontend; npm install; npm run dev
-```
+## 📱 API Endpoints3. **Database Integration**: Connect your preferred database to the backendMoving existing frontend files into `frontend/` (PowerShell)
+
+
+
+### Health & Status4. **API Routes**: Implement actual API endpoints for the financial education features
+
+- `GET /health` - Service health check
+
+- `GET /api/health` - API health status5. **Authentication**: Integrate authentication service (Supabase Auth is already set up in frontend)Open PowerShell at the repository root and run the command below to move everything except the new `frontend` and `backend` folders themselves into `frontend/`:
+
+
+
+### Smart Alerts```powershell
+
+- `GET /api/alerts` - Get user alertsGet-ChildItem -Force | Where-Object { $_.Name -ne 'backend' -and $_.Name -ne 'frontend' } | Move-Item -Destination frontend -Force
+
+- `POST /api/alerts` - Create new alert```
+
+- `PATCH /api/alerts/:id/read` - Mark alert as read
+
+- `GET /api/alerts/upcoming` - Get upcoming alertsAfter moving, switch to the `frontend/` folder to install and run the dev server:
+
+
+
+### Financial Health```powershell
+
+- `GET /api/health-score` - Get latest financial health scorecd frontend; npm install; npm run dev
+
+- `POST /api/health-score/calculate` - Calculate new score```
+
+- `GET /api/health-score/history` - Get score history
 
 ## How can I deploy this project?
 
-Simply open [Lovable](https://lovable.dev/projects/3d2b8dba-6070-4d9b-83fd-5eb51a82ca69) and click on Share -> Publish.
+### Personality Profiler
 
-## Can I connect a custom domain to my Lovable project?
+- `POST /api/personality-profiler/assessment` - Complete assessmentSimply open [Lovable](https://lovable.dev/projects/3d2b8dba-6070-4d9b-83fd-5eb51a82ca69) and click on Share -> Publish.
 
-Yes, you can!
+- `GET /api/personality-profiler/profile/:userId` - Get user profile
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+- `GET /api/personality-profiler/challenges/:userId` - Get challenges## Can I connect a custom domain to my Lovable project?
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+
+
+## 🚀 DevelopmentYes, you can!
+
+
+
+### Project StructureTo connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+
+```
+
+FinBridge/Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+
+├── frontend/          # React frontend application
+│   ├── src/
+│   │   ├── components/    # Reusable UI components
+│   │   ├── pages/         # Route components
+│   │   ├── services/      # API service layers
+│   │   └── integrations/  # Third-party integrations
+│   └── package.json
+├── backend/           # Express.js backend API
+│   ├── routes/           # API route handlers
+│   ├── services/         # Business logic
+│   ├── models/           # Database models
+│   └── package.json
+└── package.json       # Root package.json for scripts
+```
+
+### Available Scripts
+
+From the root directory:
+- `npm run dev` - Start both frontend and backend
+- `npm run backend` - Start only backend
+- `npm run frontend` - Start only frontend
+- `npm run install-all` - Install dependencies for both services
+
+### Testing
+
+The application includes comprehensive testing capabilities:
+- Backend API endpoints can be tested using the health check endpoint
+- Frontend components are built with accessibility and usability in mind
+- Integration testing between frontend and backend services
+
+## 🔧 Configuration
+
+### Database Setup
+The application uses Supabase as its database. The backend automatically attempts to create necessary tables on startup. Check the console output for SQL commands to run in your Supabase SQL editor.
+
+### CORS Configuration
+CORS is pre-configured to allow requests from:
+- `http://localhost:5173` (Vite default)
+- `http://localhost:8080` (Custom frontend port)
+- `http://localhost:3000` (Alternative port)
+
+## 🌐 Access Points
+
+Once both services are running:
+- **Frontend Application**: http://localhost:8080 (or next available port)
+- **Backend API**: http://localhost:4000
+- **Health Check**: http://localhost:4000/health
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## 📄 License
+
+This project is open source and available under the [MIT License](LICENSE).
+
+## 🙏 Acknowledgments
+
+- Built with modern web technologies
+- UI components from shadcn/ui
+- Database and authentication by Supabase
+- Icons from Lucide React
+
+---
+
+**FinBridge** - Bridging the gap between financial education and practical money management 🌉

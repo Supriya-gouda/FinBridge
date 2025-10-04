@@ -4,16 +4,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-<<<<<<< HEAD
-import { LogOut, TrendingUp, Target, Award, BookOpen, Brain, Bell, Users } from "lucide-react";
-import { toast } from "sonner";
-=======
 import { Badge } from "@/components/ui/badge";
-import { LogOut, TrendingUp, Target, Award, BookOpen, Brain, Bell, RefreshCw } from "lucide-react";
+import { LogOut, TrendingUp, Target, Award, BookOpen, Brain, Bell, RefreshCw, Users } from "lucide-react";
+import { toast } from "sonner";
 import { useToast } from "@/hooks/use-toast";
 import { FinancialHealthAPI } from "@/services/financialHealthAPI";
 import { SmartAlertsAPI } from "@/services/smartAlertsAPI";
->>>>>>> 138f59e192ef78a5ce7c7014a75ab161262c9463
 import type { User } from "@supabase/supabase-js";
 
 const LOCAL_AUTH_KEY = "finbridge_user";
