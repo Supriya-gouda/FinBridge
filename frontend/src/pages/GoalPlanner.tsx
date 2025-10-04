@@ -29,7 +29,7 @@ interface LifeGoal {
 interface LifeEvent {
   id: string;
   name: string;
-  icon: any;
+  icon: React.ComponentType<Record<string, unknown>>;
   category: string;
   estimatedCost: string;
   timeline: string;
@@ -88,12 +88,21 @@ const GoalPlanner = () => {
     }
   ]);
 
-  const [newGoal, setNewGoal] = useState({
+  type NewGoalState = {
+    title: string;
+    category: string;
+    targetAmount: number;
+    targetDate: string;
+    priority: LifeGoal['priority'];
+    currentSavings: number;
+  };
+
+  const [newGoal, setNewGoal] = useState<NewGoalState>({
     title: "",
     category: "",
     targetAmount: 100000,
     targetDate: "",
-    priority: "medium" as const,
+    priority: "medium",
     currentSavings: 0
   });
 
@@ -287,10 +296,14 @@ const GoalPlanner = () => {
       return;
     }
 
+  const allowedCategories = ["education","wedding","home","car","vacation","retirement","emergency","child"] as const;
+  const candidateCat = String(newGoal.category);
+  const category = (allowedCategories as readonly string[]).includes(candidateCat) ? (candidateCat as LifeGoal['category']) : 'education';
+
     const goal: LifeGoal = {
       id: Date.now().toString(),
       title: newGoal.title,
-      category: newGoal.category as any,
+      category,
       targetAmount: newGoal.targetAmount,
       currentSavings: newGoal.currentSavings,
       targetDate: newGoal.targetDate,
@@ -632,7 +645,12 @@ const GoalPlanner = () => {
                   <Label htmlFor="priority">Priority Level</Label>
                   <Select 
                     value={newGoal.priority} 
-                    onValueChange={(value) => setNewGoal(prev => ({ ...prev, priority: value as any }))}
+                    onValueChange={(value) => {
+                      const v = value as unknown;
+                      if (v === 'high' || v === 'medium' || v === 'low') {
+                        setNewGoal(prev => ({ ...prev, priority: v }));
+                      }
+                    }}
                   >
                     <SelectTrigger className="mt-2">
                       <SelectValue />

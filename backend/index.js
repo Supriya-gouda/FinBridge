@@ -1,16 +1,34 @@
+// Load environment variables first - specify path explicitly
+const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, '.env') });
+
+console.log('🚀 Starting FinBridge Backend...');
+console.log('📝 Environment variables loaded from:', path.join(__dirname, '.env'));
+console.log('📂 Current directory:', __dirname);
+console.log('🔗 Supabase URL:', process.env.SUPABASE_URL ? 'Set ✅' : 'Missing ❌');
+console.log('🔑 Supabase Key:', process.env.SUPABASE_ANON_KEY ? 'Set ✅' : 'Missing ❌');
+console.log('🔌 Port:', process.env.PORT || '4000 (default)');
+
 const express = require('express');
 const cors = require('cors');
-const app = express();
-const port = process.env.PORT || 4000;
 
+<<<<<<< HEAD
 // Enable CORS for all routes (allows frontend to communicate with backend)
 app.use(cors({
   origin: ['http://localhost:5173', 'http://localhost:8080'], // Support both Vite default and custom port
   credentials: true
 }));
+=======
+console.log('📦 Loading modules...');
+>>>>>>> 138f59e192ef78a5ce7c7014a75ab161262c9463
 
-app.use(express.json());
+try {
+  const { initializeDatabase } = require('./models/database');
+  const smartAlertsRoutes = require('./routes/smartAlerts');
+  const financialHealthRoutes = require('./routes/financialHealth');
+  console.log('✅ All modules loaded successfully');
 
+<<<<<<< HEAD
 // Mock database for crowd wisdom (in production, this would be Supabase)
 let crowdWisdomData = [];
 
@@ -120,7 +138,65 @@ app.get('/api/crowd/compare/:userId/:metric', (req, res) => {
 app.get('/', (req, res) => {
   res.send('FinBridge backend is running');
 });
+=======
+  const app = express();
+  const port = process.env.PORT || 4000;
 
-app.listen(port, () => {
-  console.log(`FinBridge backend listening on port ${port}`);
-});
+  // Enable CORS for all routes (allows frontend to communicate with backend)
+  app.use(cors({
+    origin: ['http://localhost:5173', 'http://localhost:3000'], // Vite and React dev ports
+    credentials: true
+  }));
+>>>>>>> 138f59e192ef78a5ce7c7014a75ab161262c9463
+
+  app.use(express.json());
+
+  console.log('🔧 Configuring routes...');
+
+  // Initialize database schema on startup
+  initializeDatabase();
+
+  // API Routes
+  app.use('/api', smartAlertsRoutes);
+  app.use('/api', financialHealthRoutes);
+
+  // Health check endpoint (separate from API routes)
+  app.get('/health', (req, res) => {
+    res.json({ 
+      status: 'ok', 
+      uptime: process.uptime(),
+      features: [
+        'Smart Alerts',
+        'Financial Health Score',
+        'Database Integration'
+      ]
+    });
+  });
+
+  // API health check
+  app.get('/api/health', (req, res) => {
+    res.json({ 
+      status: 'ok', 
+      message: 'FinBridge API is running',
+      uptime: process.uptime(),
+      endpoints: {
+        'smart_alerts': '/api/alerts',
+        'financial_health': '/api/health-score'
+      }
+    });
+  });
+
+  app.get('/', (req, res) => {
+    res.send('FinBridge backend is running with Smart Alerts & Financial Health features');
+  });
+
+  app.listen(port, () => {
+    console.log(`✅ FinBridge backend listening on port ${port}`);
+    console.log(`🌐 Health check: http://localhost:${port}/health`);
+    console.log(`🔌 API endpoints: http://localhost:${port}/api/health`);
+  });
+
+} catch (error) {
+  console.error('❌ Error starting backend:', error);
+  process.exit(1);
+}
