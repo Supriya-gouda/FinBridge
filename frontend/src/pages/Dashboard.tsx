@@ -4,8 +4,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { LogOut, TrendingUp, Target, Award, BookOpen, Brain, Bell } from "lucide-react";
-import { toast } from "sonner";
+import { Badge } from "@/components/ui/badge";
+import { LogOut, TrendingUp, Target, Award, BookOpen, Brain, Bell, RefreshCw } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { FinancialHealthAPI } from "@/services/financialHealthAPI";
+import { SmartAlertsAPI } from "@/services/smartAlertsAPI";
 import type { User } from "@supabase/supabase-js";
 
 const LOCAL_AUTH_KEY = "finbridge_user";
@@ -16,10 +19,52 @@ interface LocalUser {
   created_at: string;
 }
 
+interface ScoreComponent {
+  score: number;
+  status: 'excellent' | 'good' | 'fair' | 'needs_improvement';
+  recommendation: string;
+}
+
+interface ScoreBreakdown {
+  literacy?: ScoreComponent;
+  savings?: ScoreComponent;
+  debt?: ScoreComponent;
+  insurance?: ScoreComponent;
+  emergency_fund?: ScoreComponent;
+  investment?: ScoreComponent;
+}
+
+interface FinancialHealthScore {
+  overall_score: number;
+  literacy_score: number;
+  savings_score: number;
+  debt_score: number;
+  insurance_score: number;
+  emergency_fund_score: number;
+  investment_score: number;
+  calculated_at: string;
+  breakdown?: ScoreBreakdown;
+}
+
+interface Alert {
+  id: string;
+  alert_type: string;
+  title: string;
+  description: string;
+  priority: string;
+  due_date?: string;
+  is_read: boolean;
+}
+
 const Dashboard = () => {
   const [user, setUser] = useState<User | LocalUser | null>(null);
   const [isLocalAuth, setIsLocalAuth] = useState(false);
+  const [healthScore, setHealthScore] = useState<FinancialHealthScore | null>(null);
+  const [recentAlerts, setRecentAlerts] = useState<Alert[]>([]);
+  const [isLoadingScore, setIsLoadingScore] = useState(true);
+  const [isLoadingAlerts, setIsLoadingAlerts] = useState(true);
   const navigate = useNavigate();
+  const { toast } = useToast();
 
   useEffect(() => {
     const initializeAuth = async () => {
@@ -90,14 +135,119 @@ const Dashboard = () => {
     return () => subscription.unsubscribe();
   }, [navigate]);
 
+  // Fetch financial health score
+  useEffect(() => {
+    const fetchHealthScore = async () => {
+      if (!user) return;
+      
+      setIsLoadingScore(true);
+      try {
+        const result = await FinancialHealthAPI.getLatestScore();
+        if (result.success && result.data) {
+          setHealthScore(result.data);
+        } else {
+          // Use mock data if API is not available
+          console.log('Using mock health score data');
+          setHealthScore(FinancialHealthAPI.getMockFinancialHealthScore());
+        }
+      } catch (error) {
+        console.error('Error fetching health score:', error);
+        // Fallback to mock data
+        setHealthScore(FinancialHealthAPI.getMockFinancialHealthScore());
+      } finally {
+        setIsLoadingScore(false);
+      }
+    };
+
+    fetchHealthScore();
+  }, [user]);
+
+  // Fetch recent alerts
+  useEffect(() => {
+    const fetchAlerts = async () => {
+      if (!user) return;
+      
+      setIsLoadingAlerts(true);
+      try {
+        const result = await SmartAlertsAPI.getUserAlerts({ limit: 3, unreadOnly: true });
+        if (result.success && result.data) {
+          setRecentAlerts(result.data as Alert[]);
+        }
+      } catch (error) {
+        console.error('Error fetching alerts:', error);
+        // Mock alerts for demo
+        setRecentAlerts([
+          {
+            id: '1',
+            alert_type: 'bill',
+            title: 'Credit Card Bill Due',
+            description: 'Your HDFC credit card bill is due in 2 days',
+            priority: 'high',
+            due_date: '2025-10-06',
+            is_read: false
+          },
+          {
+            id: '2',
+            alert_type: 'investment',
+            title: 'SIP Due Tomorrow',
+            description: 'Your monthly SIP will be debited tomorrow',
+            priority: 'medium',
+            is_read: false
+          }
+        ]);
+      } finally {
+        setIsLoadingAlerts(false);
+      }
+    };
+
+    fetchAlerts();
+  }, [user]);
+
+  const handleRefreshScore = async () => {
+    if (!user) return;
+    
+    setIsLoadingScore(true);
+    try {
+      const result = await FinancialHealthAPI.calculateNewScore();
+      if (result.success && result.data) {
+        setHealthScore(result.data);
+        toast({
+          title: "Success",
+          description: "Financial health score updated!",
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: "Failed to update score. Please try again.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error('Error refreshing score:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update score. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoadingScore(false);
+    }
+  };
+
   const handleSignOut = async () => {
     if (isLocalAuth) {
       localStorage.removeItem(LOCAL_AUTH_KEY);
-      toast.success("Signed out successfully");
+      toast({
+        title: "Success",
+        description: "Signed out successfully",
+      });
       navigate("/");
     } else {
       await supabase.auth.signOut();
-      toast.success("Signed out successfully");
+      toast({
+        title: "Success",
+        description: "Signed out successfully",
+      });
       navigate("/");
     }
   };
@@ -142,17 +292,43 @@ const Dashboard = () => {
           <div className="relative z-10">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-xl font-bold text-primary-foreground">Financial Health Score</h3>
-              <div className="text-4xl font-bold text-primary-foreground">72</div>
+              <div className="flex items-center gap-2">
+                <div className="text-4xl font-bold text-primary-foreground">
+                  {isLoadingScore ? "..." : healthScore?.overall_score || 72}
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleRefreshScore}
+                  disabled={isLoadingScore}
+                  className="text-primary-foreground hover:bg-white/10"
+                >
+                  <RefreshCw className={`w-4 h-4 ${isLoadingScore ? 'animate-spin' : ''}`} />
+                </Button>
+              </div>
             </div>
-            <Progress value={72} className="h-3 mb-2" />
-            <p className="text-sm text-primary-foreground/90">
-              You're doing great! Complete more lessons to improve your score.
-            </p>
+            <Progress value={healthScore?.overall_score || 72} className="h-3 mb-2" />
+            <div className="flex items-center justify-between">
+              <p className="text-sm text-primary-foreground/90">
+                {healthScore ? 
+                  `Last updated: ${new Date(healthScore.calculated_at).toLocaleDateString()}` :
+                  "You're doing great! Complete more lessons to improve your score."
+                }
+              </p>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigate("/financial-health")}
+                className="bg-white/10 border-white/20 text-primary-foreground hover:bg-white/20"
+              >
+                View Details
+              </Button>
+            </div>
           </div>
         </Card>
 
         {/* Quick Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           <Card className="p-6">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 rounded-lg gradient-success flex items-center justify-center">
@@ -188,7 +364,99 @@ const Dashboard = () => {
               </div>
             </div>
           </Card>
+
+          <Card className="p-6">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-lg gradient-warning flex items-center justify-center">
+                <Bell className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Active Alerts</p>
+                <p className="text-2xl font-bold">{isLoadingAlerts ? "..." : recentAlerts.length}</p>
+              </div>
+            </div>
+          </Card>
         </div>
+
+        {/* Recent Alerts Section */}
+        {recentAlerts.length > 0 && (
+          <Card className="p-6 mb-8">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-bold flex items-center gap-2">
+                <Bell className="w-5 h-5 text-orange-500" />
+                Recent Alerts
+              </h3>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigate("/smart-alerts")}
+              >
+                View All
+              </Button>
+            </div>
+            <div className="space-y-3">
+              {recentAlerts.map((alert) => (
+                <div key={alert.id} className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg">
+                  <div className={`w-2 h-2 rounded-full ${
+                    alert.priority === 'high' ? 'bg-red-500' :
+                    alert.priority === 'medium' ? 'bg-yellow-500' : 'bg-green-500'
+                  }`} />
+                  <div className="flex-1">
+                    <h4 className="font-medium text-sm">{alert.title}</h4>
+                    <p className="text-xs text-muted-foreground">{alert.description}</p>
+                  </div>
+                  <Badge variant={alert.priority === 'high' ? 'destructive' : 'secondary'}>
+                    {alert.priority}
+                  </Badge>
+                </div>
+              ))}
+            </div>
+          </Card>
+        )}
+
+        {/* Score Breakdown Cards */}
+        {healthScore?.breakdown && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+            <Card className="p-4">
+              <div className="flex items-center justify-between mb-2">
+                <h4 className="font-semibold text-sm">Financial Literacy</h4>
+                <Badge variant={FinancialHealthAPI.getScoreBadgeVariant(healthScore.literacy_score)}>
+                  {healthScore.literacy_score}
+                </Badge>
+              </div>
+              <Progress value={healthScore.literacy_score} className="h-2 mb-2" />
+              <p className="text-xs text-muted-foreground">
+                {healthScore.breakdown.literacy?.recommendation}
+              </p>
+            </Card>
+
+            <Card className="p-4">
+              <div className="flex items-center justify-between mb-2">
+                <h4 className="font-semibold text-sm">Savings Rate</h4>
+                <Badge variant={FinancialHealthAPI.getScoreBadgeVariant(healthScore.savings_score)}>
+                  {healthScore.savings_score}
+                </Badge>
+              </div>
+              <Progress value={healthScore.savings_score} className="h-2 mb-2" />
+              <p className="text-xs text-muted-foreground">
+                {healthScore.breakdown.savings?.recommendation}
+              </p>
+            </Card>
+
+            <Card className="p-4">
+              <div className="flex items-center justify-between mb-2">
+                <h4 className="font-semibold text-sm">Emergency Fund</h4>
+                <Badge variant={FinancialHealthAPI.getScoreBadgeVariant(healthScore.emergency_fund_score)}>
+                  {healthScore.emergency_fund_score}
+                </Badge>
+              </div>
+              <Progress value={healthScore.emergency_fund_score} className="h-2 mb-2" />
+              <p className="text-xs text-muted-foreground">
+                {healthScore.breakdown.emergency_fund?.recommendation}
+              </p>
+            </Card>
+          </div>
+        )}
 
         {/* New Feature Cards */}
         <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6 mb-8">

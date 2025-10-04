@@ -6,143 +6,98 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
 import { ArrowLeft, Bell, TrendingUp, CreditCard, Calendar, AlertTriangle, Settings, DollarSign } from "lucide-react";
-import { toast } from "sonner";
-import alertsService from "@/modules/alerts/alertsService";
+import { useToast } from "@/hooks/use-toast";
+import alertsService, { UserAlert } from "@/modules/alerts/alertsService";
+import { supabase } from '@/integrations/supabase/client';
 
 interface Alert {
   id: string;
-  type: "bill" | "investment" | "goal" | "market" | "emi";
+  alert_type: "bill" | "investment" | "goal" | "market" | "emi" | "budget" | "emergency";
   title: string;
   description: string;
   amount?: number;
-  dueDate?: string;
+  due_date?: string;
   priority: "high" | "medium" | "low";
   enabled: boolean;
   frequency: "daily" | "weekly" | "monthly";
+  is_read: boolean;
+  created_at: string;
 }
 
 interface AlertSettings {
-  billReminders: boolean;
-  investmentOpportunities: boolean;
-  goalProgress: boolean;
-  marketUpdates: boolean;
-  emiReminders: boolean;
-  budgetAlerts: boolean;
-  emergencyFundLow: boolean;
-  spendingSpikes: boolean;
+  bill_reminders: boolean;
+  investment_opportunities: boolean;
+  goal_progress: boolean;
+  market_updates: boolean;
+  emi_reminders: boolean;
+  budget_alerts: boolean;
+  emergency_fund_low: boolean;
+  spending_spikes: boolean;
+  budget_limit: number;
+  emergency_fund_target: number;
 }
 
 const SmartAlerts = () => {
   const navigate = useNavigate();
-  const [alerts, setAlerts] = useState<Alert[]>([
-    {
-      id: "1",
-      type: "bill",
-      title: "Credit Card Bill Due",
-      description: "Your HDFC credit card bill of ₹12,500 is due in 3 days",
-      amount: 12500,
-      dueDate: "2025-10-06",
-      priority: "high",
-      enabled: true,
-      frequency: "monthly"
-    },
-    {
-      id: "2",
-      type: "investment",
-      title: "SIP Due Tomorrow",
-      description: "Your monthly SIP of ₹5,000 will be debited tomorrow",
-      amount: 5000,
-      dueDate: "2025-10-04",
-      priority: "medium",
-      enabled: true,
-      frequency: "monthly"
-    },
-    {
-      id: "3",
-      type: "market",
-      title: "Gold Price Alert",
-      description: "Gold prices have dropped by 2% - Good time to buy",
-      priority: "low",
-      enabled: true,
-      frequency: "daily"
-    },
-    {
-      id: "4",
-      type: "goal",
-      title: "Emergency Fund Goal",
-      description: "You're 80% towards your emergency fund goal. Add ₹10,000 more!",
-      amount: 10000,
-      priority: "medium",
-      enabled: true,
-      frequency: "weekly"
-    },
-    {
-      id: "5",
-      type: "emi",
-      title: "Home Loan EMI Due",
-      description: "Your home loan EMI of ₹35,000 is due on 5th October",
-      amount: 35000,
-      dueDate: "2025-10-05",
-      priority: "high",
-      enabled: true,
-      frequency: "monthly"
-    }
-  ]);
-
+  const { toast } = useToast();
+  const [alerts, setAlerts] = useState<Alert[]>([]);
   const [settings, setSettings] = useState<AlertSettings>({
-    billReminders: true,
-    investmentOpportunities: true,
-    goalProgress: true,
-    marketUpdates: true,
-    emiReminders: true,
-    budgetAlerts: true,
-    emergencyFundLow: true,
-    spendingSpikes: false
+    bill_reminders: true,
+    investment_opportunities: true,
+    goal_progress: true,
+    market_updates: true,
+    emi_reminders: true,
+    budget_alerts: true,
+    emergency_fund_low: true,
+    spending_spikes: false,
+    budget_limit: 25000,
+    emergency_fund_target: 100000
   });
-
+  const [isLoading, setIsLoading] = useState(true);
+  const [isGenerating, setIsGenerating] = useState(false);
+  
   // Load user alerts from DB if signed in
   useEffect(() => {
     const load = async () => {
       try {
-        // supabase is available globally via integrations
-        const { data, error } = await (await import('@/integrations/supabase/client')).supabase.auth.getUser();
+  // supabase is available via integrations
+  const { data, error } = await supabase.auth.getUser();
         if (error) return;
         const userId = data?.user?.id;
         if (!userId) return;
         const dbAlerts = await alertsService.getUserAlerts(userId);
         if (dbAlerts && dbAlerts.length) {
-          // helpers to coerce DB values into our Alert types
-          const isValidFrequency = (f: unknown): f is Alert['frequency'] => typeof f === 'string' && (f === 'daily' || f === 'weekly' || f === 'monthly');
-          const isValidType = (t: unknown): t is Alert['type'] => typeof t === 'string' && ['bill','investment','goal','market','emi'].includes(t);
-          const isValidPriority = (p: unknown): p is Alert['priority'] => typeof p === 'string' && ['high','medium','low'].includes(p);
-
-          const mapped: Alert[] = dbAlerts.map(a => {
-            const freq = isValidFrequency(a.frequency) ? a.frequency : 'monthly';
-            const type = isValidType(a.type) ? a.type : 'investment';
-            const priority = isValidPriority(a.priority) ? a.priority : 'low';
+          const mapped: Alert[] = dbAlerts.map((a: UserAlert) => {
+            const allowedF = ['daily', 'weekly', 'monthly'] as const;
+            const allowedP = ['high', 'medium', 'low'] as const;
+            const freq = typeof a.frequency === 'string' && (allowedF as readonly string[]).includes(a.frequency) ? (a.frequency as Alert['frequency']) : 'monthly';
+            const type = typeof a.type === 'string' ? (a.type as Alert['alert_type']) : 'investment';
+            const priority = typeof a.priority === 'string' && (allowedP as readonly string[]).includes(a.priority) ? (a.priority as Alert['priority']) : 'low';
             return {
               id: String(a.id),
-              type,
+              alert_type: type,
               title: a.title ?? 'Alert',
               description: a.description ?? '',
-              amount: a.amount ? Number(a.amount) : undefined,
-              dueDate: a.due_date ?? undefined,
+              amount: a.amount != null ? Number(a.amount) : undefined,
+              due_date: a.due_date ?? undefined,
               priority,
-              enabled: a.enabled ?? true,
-              frequency: freq
-            };
+              enabled: typeof a.enabled === 'boolean' ? a.enabled : true,
+              frequency: freq,
+              is_read: ((a as UserAlert & { is_read?: boolean }).is_read) ?? false,
+              created_at: a.created_at ?? new Date().toISOString()
+            } as Alert;
           });
           setAlerts(prev => [...mapped, ...prev]);
         }
       } catch (e) {
         console.warn('Failed to load DB alerts', e);
+      } finally {
+        setIsLoading(false);
       }
     };
     load();
   }, []);
-
   const [budgetLimit, setBudgetLimit] = useState(25000);
   const [emergencyFundTarget, setEmergencyFundTarget] = useState(100000);
 
@@ -181,17 +136,26 @@ const SmartAlerts = () => {
     setAlerts(prev => prev.map(alert => 
       alert.id === alertId ? { ...alert, enabled: !alert.enabled } : alert
     ));
-    toast.success("Alert settings updated");
+    toast({
+      title: "Success",
+      description: "Alert settings updated",
+    });
   };
 
-  const updateSettings = (key: keyof AlertSettings, value: boolean) => {
+  const updateSettings = (key: keyof AlertSettings, value: boolean | number) => {
     setSettings(prev => ({ ...prev, [key]: value }));
-    toast.success("Settings updated");
+    toast({
+      title: "Success", 
+      description: "Settings updated",
+    });
   };
 
   const dismissAlert = (alertId: string) => {
     setAlerts(prev => prev.filter(alert => alert.id !== alertId));
-    toast.success("Alert dismissed");
+    toast({
+      title: "Success",
+      description: "Alert dismissed",
+    });
   };
 
   const activeAlerts = alerts.filter(alert => alert.enabled);
@@ -270,8 +234,8 @@ const SmartAlerts = () => {
                 <Card key={alert.id} className={`p-4 ${!alert.enabled ? 'opacity-50' : ''}`}>
                   <div className="flex items-start justify-between">
                     <div className="flex items-start gap-3">
-                      <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${getTypeColor(alert.type)}`}>
-                        {getTypeIcon(alert.type)}
+                      <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${getTypeColor(alert.alert_type)}`}>
+                        {getTypeIcon(alert.alert_type)}
                       </div>
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1">
@@ -283,7 +247,7 @@ const SmartAlerts = () => {
                         <p className="text-sm text-muted-foreground mb-2">{alert.description}</p>
                         <div className="flex items-center gap-4 text-xs text-muted-foreground">
                           {alert.amount && <span>Amount: ₹{alert.amount.toLocaleString()}</span>}
-                          {alert.dueDate && <span>Due: {new Date(alert.dueDate).toLocaleDateString()}</span>}
+                          {alert.due_date && <span>Due: {new Date(alert.due_date).toLocaleDateString()}</span>}
                           <span>Frequency: {alert.frequency}</span>
                         </div>
                       </div>
@@ -317,48 +281,48 @@ const SmartAlerts = () => {
                   <Label htmlFor="bill-reminders">Bill Reminders</Label>
                   <Switch
                     id="bill-reminders"
-                    checked={settings.billReminders}
-                    onCheckedChange={(value) => updateSettings("billReminders", value)}
+                    checked={settings.bill_reminders}
+                    onCheckedChange={(value) => updateSettings("bill_reminders", value)}
                   />
                 </div>
                 <div className="flex items-center justify-between">
                   <Label htmlFor="investment-alerts">Investment Opportunities</Label>
                   <Switch
                     id="investment-alerts"
-                    checked={settings.investmentOpportunities}
-                    onCheckedChange={(value) => updateSettings("investmentOpportunities", value)}
+                    checked={settings.investment_opportunities}
+                    onCheckedChange={(value) => updateSettings("investment_opportunities", value)}
                   />
                 </div>
                 <div className="flex items-center justify-between">
                   <Label htmlFor="goal-progress">Goal Progress</Label>
                   <Switch
                     id="goal-progress"
-                    checked={settings.goalProgress}
-                    onCheckedChange={(value) => updateSettings("goalProgress", value)}
+                    checked={settings.goal_progress}
+                    onCheckedChange={(value) => updateSettings("goal_progress", value)}
                   />
                 </div>
                 <div className="flex items-center justify-between">
                   <Label htmlFor="market-updates">Market Updates</Label>
                   <Switch
                     id="market-updates"
-                    checked={settings.marketUpdates}
-                    onCheckedChange={(value) => updateSettings("marketUpdates", value)}
+                    checked={settings.market_updates}
+                    onCheckedChange={(value) => updateSettings("market_updates", value)}
                   />
                 </div>
                 <div className="flex items-center justify-between">
                   <Label htmlFor="budget-alerts">Budget Alerts</Label>
                   <Switch
                     id="budget-alerts"
-                    checked={settings.budgetAlerts}
-                    onCheckedChange={(value) => updateSettings("budgetAlerts", value)}
+                    checked={settings.budget_alerts}
+                    onCheckedChange={(value) => updateSettings("budget_alerts", value)}
                   />
                 </div>
                 <div className="flex items-center justify-between">
                   <Label htmlFor="spending-spikes">Spending Spikes</Label>
                   <Switch
                     id="spending-spikes"
-                    checked={settings.spendingSpikes}
-                    onCheckedChange={(value) => updateSettings("spendingSpikes", value)}
+                    checked={settings.spending_spikes}
+                    onCheckedChange={(value) => updateSettings("spending_spikes", value)}
                   />
                 </div>
               </div>
