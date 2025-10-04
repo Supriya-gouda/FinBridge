@@ -52,7 +52,39 @@ ALTER TABLE public.goals
 ADD COLUMN IF NOT EXISTS goal_type character varying(50),
 ADD COLUMN IF NOT EXISTS status character varying(20) DEFAULT 'active';
 
--- 6. Create indexes for better performance
+-- 6. Create user_personality_profiles table for personality assessment results
+CREATE TABLE IF NOT EXISTS public.user_personality_profiles (
+    id uuid NOT NULL DEFAULT gen_random_uuid(),
+    user_id uuid REFERENCES public.users(user_id) ON DELETE CASCADE,
+    personality_type character varying(50) NOT NULL,
+    assessment_answers jsonb NOT NULL,
+    assessment_scores jsonb,
+    confidence_level numeric(5,2) DEFAULT 0,
+    completed_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
+    created_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
+    updated_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT personality_profiles_pkey PRIMARY KEY (id),
+    CONSTRAINT personality_profiles_user_unique UNIQUE (user_id)
+);
+
+-- 7. Create personality_challenges table for personalized challenges
+CREATE TABLE IF NOT EXISTS public.personality_challenges (
+    id uuid NOT NULL DEFAULT gen_random_uuid(),
+    user_id uuid REFERENCES public.users(user_id) ON DELETE CASCADE,
+    personality_type character varying(50) NOT NULL,
+    title character varying(255) NOT NULL,
+    description text,
+    target_amount numeric(12,2) DEFAULT 0,
+    duration_days integer DEFAULT 30,
+    difficulty character varying(20) DEFAULT 'beginner',
+    status character varying(20) DEFAULT 'pending',
+    progress numeric(5,2) DEFAULT 0,
+    created_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
+    updated_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT personality_challenges_pkey PRIMARY KEY (id)
+);
+
+-- 8. Create indexes for better performance
 CREATE INDEX IF NOT EXISTS idx_smart_alerts_user_id ON public.smart_alerts(user_id);
 CREATE INDEX IF NOT EXISTS idx_smart_alerts_type_enabled ON public.smart_alerts(alert_type, enabled);
 CREATE INDEX IF NOT EXISTS idx_smart_alerts_due_date ON public.smart_alerts(due_date);
@@ -64,8 +96,11 @@ CREATE INDEX IF NOT EXISTS idx_transactions_type ON public.transactions(transact
 CREATE INDEX IF NOT EXISTS idx_goals_user_id ON public.goals(user_id);
 CREATE INDEX IF NOT EXISTS idx_goals_status ON public.goals(status);
 CREATE INDEX IF NOT EXISTS idx_alert_settings_user_id ON public.alert_settings(user_id);
+CREATE INDEX IF NOT EXISTS idx_personality_profiles_user_id ON public.user_personality_profiles(user_id);
+CREATE INDEX IF NOT EXISTS idx_personality_challenges_user_id ON public.personality_challenges(user_id);
+CREATE INDEX IF NOT EXISTS idx_personality_challenges_status ON public.personality_challenges(status);
 
--- 7. Insert sample data for testing
+-- 9. Insert sample data for testing
 -- Create a demo user if it doesn't exist
 INSERT INTO public.users (user_id, name, email, created_at) 
 VALUES ('demo-user-123', 'Demo User', 'demo@finbridge.com', CURRENT_TIMESTAMP)
@@ -75,6 +110,22 @@ ON CONFLICT (email) DO NOTHING;
 INSERT INTO public.alert_settings (user_id, bill_reminders, investment_opportunities, goal_progress, budget_limit)
 VALUES ('demo-user-123', true, true, true, 25000)
 ON CONFLICT (user_id) DO NOTHING;
+
+-- Sample personality profile for demo user
+INSERT INTO public.user_personality_profiles (user_id, personality_type, assessment_answers, assessment_scores, confidence_level)
+VALUES ('demo-user-123', 'balanced_planner', 
+        '{"salary_approach": "review_budget", "risk_tolerance": "calculated_risks", "planning_approach": "detailed_longterm", "purchase_decision": "extensive_research", "emergency_fund": "one_to_three_months", "investment_knowledge": "some_knowledge"}',
+        '{"prudent_saver": 30, "lifestyle_enthusiast": 15, "growth_seeker": 25, "balanced_planner": 85, "risk_averse": 10}',
+        85.5)
+ON CONFLICT (user_id) DO NOTHING;
+
+-- Sample personality challenges for demo user
+INSERT INTO public.personality_challenges (user_id, personality_type, title, description, target_amount, duration_days, difficulty, status, progress)
+VALUES 
+    ('demo-user-123', 'balanced_planner', '30-Day Budget Tracking Challenge', 'Track all your expenses for 30 days to better understand your spending patterns', 0, 30, 'beginner', 'in_progress', 65),
+    ('demo-user-123', 'balanced_planner', 'Emergency Fund Builder', 'Build an emergency fund worth 3 months of expenses', 75000, 90, 'intermediate', 'pending', 0),
+    ('demo-user-123', 'balanced_planner', 'Investment Portfolio Review', 'Review and rebalance your investment portfolio', 0, 14, 'advanced', 'pending', 0)
+ON CONFLICT DO NOTHING;
 
 -- Sample transactions for demo user
 INSERT INTO public.transactions (user_id, transaction_date, description, amount, category, transaction_type)
@@ -118,3 +169,60 @@ ON CONFLICT DO NOTHING;
 INSERT INTO public.resilience_scores (user_id, literacy_score, savings_score, debt_score, insurance_score, emergency_fund_score, investment_score, overall_score, calculated_at)
 VALUES ('demo-user-123', 85, 65, 78, 45, 60, 70, 72, CURRENT_TIMESTAMP)
 ON CONFLICT DO NOTHING;
+
+-- 10. Create RLS (Row Level Security) policies for secure access
+ALTER TABLE public.smart_alerts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.alert_settings ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.user_personality_profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.personality_challenges ENABLE ROW LEVEL SECURITY;
+
+-- Smart Alerts policies
+CREATE POLICY "Users can view their own alerts" ON public.smart_alerts
+  FOR SELECT USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can insert their own alerts" ON public.smart_alerts
+  FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can update their own alerts" ON public.smart_alerts
+  FOR UPDATE USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can delete their own alerts" ON public.smart_alerts
+  FOR DELETE USING (auth.uid() = user_id);
+
+-- Alert Settings policies
+CREATE POLICY "Users can view their own alert settings" ON public.alert_settings
+  FOR SELECT USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can insert their own alert settings" ON public.alert_settings
+  FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can update their own alert settings" ON public.alert_settings
+  FOR UPDATE USING (auth.uid() = user_id);
+
+-- Personality Profiles policies
+CREATE POLICY "Users can view their own personality profile" ON public.user_personality_profiles
+  FOR SELECT USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can insert their own personality profile" ON public.user_personality_profiles
+  FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can update their own personality profile" ON public.user_personality_profiles
+  FOR UPDATE USING (auth.uid() = user_id);
+
+-- Personality Challenges policies
+CREATE POLICY "Users can view their own challenges" ON public.personality_challenges
+  FOR SELECT USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can insert their own challenges" ON public.personality_challenges
+  FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can update their own challenges" ON public.personality_challenges
+  FOR UPDATE USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can delete their own challenges" ON public.personality_challenges
+  FOR DELETE USING (auth.uid() = user_id);
+
+-- Success message
+SELECT 'FinBridge database setup completed successfully! 🎉' as message,
+       'All tables created: smart_alerts, alert_settings, user_personality_profiles, personality_challenges' as tables_created,
+       'Features ready: Smart Alerts, Financial Health Score, Personality Profiler & Behavioral Insights' as features_ready;
