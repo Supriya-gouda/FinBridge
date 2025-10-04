@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { ArrowLeft, Bell, TrendingUp, CreditCard, Calendar, AlertTriangle, Settings, DollarSign } from "lucide-react";
 import { toast } from "sonner";
+import alertsService from "@/modules/alerts/alertsService";
 
 interface Alert {
   id: string;
@@ -100,6 +101,47 @@ const SmartAlerts = () => {
     emergencyFundLow: true,
     spendingSpikes: false
   });
+
+  // Load user alerts from DB if signed in
+  useEffect(() => {
+    const load = async () => {
+      try {
+        // supabase is available globally via integrations
+        const { data, error } = await (await import('@/integrations/supabase/client')).supabase.auth.getUser();
+        if (error) return;
+        const userId = data?.user?.id;
+        if (!userId) return;
+        const dbAlerts = await alertsService.getUserAlerts(userId);
+        if (dbAlerts && dbAlerts.length) {
+          // helpers to coerce DB values into our Alert types
+          const isValidFrequency = (f: unknown): f is Alert['frequency'] => typeof f === 'string' && (f === 'daily' || f === 'weekly' || f === 'monthly');
+          const isValidType = (t: unknown): t is Alert['type'] => typeof t === 'string' && ['bill','investment','goal','market','emi'].includes(t);
+          const isValidPriority = (p: unknown): p is Alert['priority'] => typeof p === 'string' && ['high','medium','low'].includes(p);
+
+          const mapped: Alert[] = dbAlerts.map(a => {
+            const freq = isValidFrequency(a.frequency) ? a.frequency : 'monthly';
+            const type = isValidType(a.type) ? a.type : 'investment';
+            const priority = isValidPriority(a.priority) ? a.priority : 'low';
+            return {
+              id: String(a.id),
+              type,
+              title: a.title ?? 'Alert',
+              description: a.description ?? '',
+              amount: a.amount ? Number(a.amount) : undefined,
+              dueDate: a.due_date ?? undefined,
+              priority,
+              enabled: a.enabled ?? true,
+              frequency: freq
+            };
+          });
+          setAlerts(prev => [...mapped, ...prev]);
+        }
+      } catch (e) {
+        console.warn('Failed to load DB alerts', e);
+      }
+    };
+    load();
+  }, []);
 
   const [budgetLimit, setBudgetLimit] = useState(25000);
   const [emergencyFundTarget, setEmergencyFundTarget] = useState(100000);

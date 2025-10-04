@@ -1,12 +1,13 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
-import { simulateSIP, InvestmentSimulation, SimulationResult } from './investmentSimulator';
-import investmentService from './investmentService';
+import { simulateSIP, simulateRecommendation, InvestmentSimulation, SimulationResult } from './investmentSimulator';
+import investmentService, { getUserInvestmentRecommendations, addInvestmentRecommendation, InvestmentRecommendation } from './investmentService';
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import alertsService from '@/modules/alerts/alertsService';
 
 const InvestmentAdvisor = () => {
 	const [params, setParams] = useState<InvestmentSimulation>({ monthlyAmount: 5000, years: 10, expectedReturn: 12 });
@@ -16,10 +17,30 @@ const InvestmentAdvisor = () => {
 
 		// We'll query supabase for the current user when saving
 
-	const runSimulation = () => {
+		const runSimulation = () => {
 		const res = simulateSIP(params);
 		setResult(res);
 	};
+
+		// Recommendations state
+		const [recs, setRecs] = useState<InvestmentRecommendation[]>([]);
+		const [recSimResults, setRecSimResults] = useState<Record<string, SimulationResult | null>>({});
+
+		const loadRecommendations = async () => {
+			try {
+				const { data, error } = await supabase.auth.getUser();
+				if (error) throw error;
+				const userId = data?.user?.id;
+				if (!userId) return;
+				const items = await getUserInvestmentRecommendations(userId);
+				setRecs(items);
+			} catch (err: unknown) {
+				console.warn('loadRecommendations failed', err);
+			}
+		};
+
+			// load on mount
+			useEffect(() => { loadRecommendations(); }, []);
 
 	const saveRecommendation = async () => {
 			if (!result) {
@@ -28,20 +49,40 @@ const InvestmentAdvisor = () => {
 			}
 
 			setLoading(true);
-			try {
-				const { data, error } = await supabase.auth.getUser();
-				if (error) throw error;
-				const userId = data?.user?.id;
-				if (!userId) {
-					toast({ title: 'Not signed in', description: 'Please sign in to save recommendations.' });
-					return;
-				}
+					try {
+						const { data, error } = await supabase.auth.getUser();
+						if (error) throw error;
+						const userId = data?.user?.id;
+						if (!userId) {
+							toast({ title: 'Not signed in', description: 'Please sign in to save recommendations.' });
+							return;
+						}
 
-				const rec = { params, result };
-				const inserted = await investmentService.addRecommendation(userId, rec);
-				toast({ title: 'Saved', description: `Recommendation saved (${inserted.id})` });
-			} catch (err: any) {
-				toast({ title: 'Error', description: err.message ?? 'Failed to save recommendation' });
+						const rec = { params, result };
+								const inserted = await addInvestmentRecommendation(userId, rec);
+								toast({ title: 'Saved', description: `Recommendation saved (${inserted.id})` });
+
+								// create a linked alert so the user is notified (e.g., in SmartAlerts)
+								try {
+									await alertsService.addAlert({
+										user_id: userId,
+										type: 'investment',
+										title: 'New Investment Recommendation Saved',
+										description: `A recommendation was saved: ${inserted.id}`,
+										priority: 'medium',
+										enabled: true,
+										frequency: 'once',
+										metadata: { recommendation_id: inserted.id }
+									});
+								} catch (alertErr) {
+									console.warn('Failed to create linked alert', alertErr);
+								}
+
+								// refresh list
+								await loadRecommendations();
+			} catch (err: unknown) {
+				const message = err instanceof Error ? err.message : String(err ?? 'Failed to save recommendation');
+				toast({ title: 'Error', description: message });
 			} finally {
 				setLoading(false);
 			}
@@ -105,6 +146,60 @@ const InvestmentAdvisor = () => {
 						</div>
 					</Card>
 				)}
+
+				{/* Recommendations list */}
+				<Card className="p-6">
+					<h4 className="font-semibold mb-2">Saved Recommendations</h4>
+					<div className="mb-4 flex gap-2">
+						<Button onClick={loadRecommendations}>Refresh</Button>
+					</div>
+					{recs.length === 0 ? (
+						<p className="text-sm text-muted-foreground">No recommendations yet.</p>
+					) : (
+						<div className="space-y-3">
+							{recs.map((r, idx) => {
+								const key = r.id ?? String(idx);
+								const sim = recSimResults[key];
+								return (
+									<div key={key} className="p-3 border rounded">
+										<div className="flex items-start justify-between">
+											<div>
+												<div className="text-xs text-muted-foreground">{r.created_at ? new Date(r.created_at).toLocaleString() : ''}</div>
+												<div className="font-medium">Recommendation</div>
+											</div>
+											<div>
+												<Button size="sm" onClick={() => {
+													const res = simulateRecommendation(r.recommendation ?? r);
+													setRecSimResults(prev => ({ ...prev, [key]: res }));
+												}}>Simulate</Button>
+												<Button size="sm" variant="destructive" className="ml-2" onClick={async () => {
+													if (!r.id) return;
+													try {
+														await (await import('./investmentService')).deleteRecommendation(r.id);
+														toast({ title: 'Deleted', description: 'Recommendation removed' });
+														await loadRecommendations();
+													} catch (e) {
+														console.warn('Failed to delete recommendation', e);
+														toast({ title: 'Error', description: 'Failed to delete recommendation' });
+													}
+												}}>Delete</Button>
+											</div>
+										</div>
+										<pre className="text-xs mt-2 max-h-40 overflow-auto">{JSON.stringify(r.recommendation ?? r, null, 2)}</pre>
+										{sim && (
+											<div className="mt-3 p-2 bg-gray-50 rounded">
+												<div className="text-sm font-medium">Simulated Outcome</div>
+												<div className="text-xs">Final Amount: ₹{sim.totalAmount.toLocaleString()}</div>
+												<div className="text-xs">Total Invested: ₹{sim.totalInvested.toLocaleString()}</div>
+												<div className="text-xs">Total Returns: ₹{sim.totalReturns.toLocaleString()}</div>
+											</div>
+										)}
+									</div>
+								);
+							})}
+						</div>
+					)}
+				</Card>
 			</div>
 		</div>
 	);

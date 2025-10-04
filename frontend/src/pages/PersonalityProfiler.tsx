@@ -109,8 +109,16 @@ const PersonalityProfiler = () => {
     toast.success("Personality analysis complete!");
   };
 
+  type Insight = {
+    title: string;
+    description: string;
+    strengths: string[];
+    challenges: string[];
+    recommendations: string[];
+  };
+
   const getPersonalityInsights = (personality: string) => {
-    const insights: { [key: string]: any } = {
+    const insights: { [key: string]: Insight } = {
       saver: {
         title: "The Prudent Saver",
         description: "You prioritize financial security and long-term stability. You're naturally cautious with money and prefer guaranteed returns.",

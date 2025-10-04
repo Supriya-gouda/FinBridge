@@ -51,4 +51,41 @@ export const simulateSIP = (params: InvestmentSimulation): SimulationResult => {
 	};
 };
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
 export default { simulateSIP };
+
+/**
+ * Attempt to run a simulation for a saved recommendation object.
+ * The recommendation object shape may be one of:
+ *  - { params: { monthlyAmount, years, expectedReturn }, result: ... }
+ *  - { recommendation: { params: { ... } } }
+ * If SIP params are found, delegate to simulateSIP and return the result.
+ */
+type RecLike = { params?: Partial<InvestmentSimulation> } | { recommendation?: { params?: Partial<InvestmentSimulation> } } | Partial<InvestmentSimulation>;
+
+export const simulateRecommendation = (rec: RecLike | null | undefined): SimulationResult | null => {
+	if (!rec) return null;
+
+		const maybeParams: unknown = (rec as unknown && typeof rec === 'object') ? ((rec as any).params ?? (rec as any).recommendation?.params ?? (rec as any).recommendation ?? null) : null;
+		if (!maybeParams || typeof maybeParams !== 'object') return null;
+
+		const getField = <T extends number | undefined>(obj: unknown, ...keys: string[]): T => {
+			for (const k of keys) {
+				if (obj && typeof obj === 'object' && k in (obj as any)) {
+					const v = (obj as any)[k];
+					if (typeof v === 'number') return v as T;
+				}
+			}
+			return undefined as T;
+		};
+
+		const monthlyAmount = getField<number | undefined>(maybeParams, 'monthlyAmount', 'monthly_amount', 'monthly', 'amount');
+		const years = getField<number | undefined>(maybeParams, 'years', 'duration', 'tenure');
+		const expectedReturn = getField<number | undefined>(maybeParams, 'expectedReturn', 'expected_return', 'expected');
+
+	if (typeof monthlyAmount === 'number' && typeof years === 'number' && typeof expectedReturn === 'number') {
+		return simulateSIP({ monthlyAmount, years, expectedReturn });
+	}
+
+	return null;
+};

@@ -1,5 +1,10 @@
 import type { Config } from "tailwindcss";
 
+// Local require declaration to avoid needing @types/node in this config file
+/* eslint-disable @typescript-eslint/no-explicit-any */
+declare const require: any;
+/* eslint-enable @typescript-eslint/no-explicit-any */
+
 export default {
   darkMode: ["class"],
   content: ["./pages/**/*.{ts,tsx}", "./components/**/*.{ts,tsx}", "./app/**/*.{ts,tsx}", "./src/**/*.{ts,tsx}"],
@@ -96,5 +101,6 @@ export default {
       },
     },
   },
-  plugins: [require("tailwindcss-animate")],
+   
+  plugins: [require('tailwindcss-animate')],
 } satisfies Config;
